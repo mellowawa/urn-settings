@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Urn Settings
+Comment=Configure your Urn settings
+Exec=urn-settings
+Icon=preferences-system-symbolic
+Type=Application
+Categories=Settings;Utility;
+StartupWMClass=UrnSettings
+MimeType=text/plain;

@@ -1,0 +1,119 @@
+#!/bin/bash
+
+get="gsettings get wildmouse.urn"
+set="gsettings set wildmouse.urn"
+
+global_hotkey_status=$($get global-hotkeys)
+hide_cursor_status=$($get hide-cursor)
+start_decor_status=$($get start-decorated)
+start_on_top_status=$($get start-on-top)
+
+start_split=$($get keybind-start-split | sed "s/'//g")
+stop_reset=$($get keybind-stop-reset | sed "s/'//g")
+cancel=$($get keybind-cancel | sed "s/'//g")
+unsplit=$($get keybind-unsplit | sed "s/'//g")
+skip_split=$($get keybind-skip-split | sed "s/'//g")
+toggle_always_on_top=$($get keybind-toggle-win-on-top | sed "s/'//g")
+toggle_decor=$($get keybind-toggle-decorations | sed "s/'//g")
+
+set_theme=$($get theme | sed "s/'//g")
+theme_select=$(ls -d /usr/local/share/urn/themes/*/ | xargs -n1 basename | tr '\n' '!' | sed 's/!$//')
+
+output=$( \
+    yad --title="Urn Settings" --width=470 --height=700 \
+    --form \
+    --field='<span size="x-large" font_weight="bold">General Settings</span>':LBL "" \
+    --field="Global Hotkeys:":CHK $global_hotkey_status \
+    --field="Hide Cursor:":CHK $hide_cursor_status \
+    --field="Window Decoration on Start:":CHK $start_decor_status \
+    --field="Force Always On Top at Start:":CHK $start_on_top_status \
+    \
+    --field=" ":LBL "" \
+    --field='<span size="x-large" font_weight="bold">Hotkeys</span>':LBL "" \
+    --field='<span size="small"><b>Common Special key names:</b> Delete, Insert, Up, Down, Right, Left, Page Up, Page Down.</span>':LBL "" \
+    --field='<span size="small"><b>Combine key with CTRL:</b> &lt;Control&gt;[key]</span>':LBL "" \
+    --field="Start/Spli:t":ENTRY "$start_split" \
+    --field="Stop/Reset:":ENTRY "$stop_reset" \
+    --field="Cancel:":ENTRY "$cancel" \
+    --field="Undo Split:":ENTRY "$unsplit" \
+    --field="Skip Split:":ENTRY "$skip_split" \
+    --field="Always on-top:":ENTRY "$toggle_always_on_top" \
+    --field="Toggle Window Decoration:":ENTRY "$toggle_decor" \
+    \
+    --field=" ":LBL "" \
+    --field='<span size="x-large" font_weight="bold">Theming</span>':LBL "" \
+    --field="Theme:":CB "$set_theme!$theme_select" \
+    \
+    --field=" ":LBL \
+    --button="Save:0" \
+)
+
+echo "Output from yad: $output"
+IFS='|' read -r \
+    EMPTY \
+    \
+    global_hotkey_status \
+    hide_cursor_status \
+    start_decor_status \
+    start_on_top_status \
+    start_split \
+    \
+    EMPTY \
+    EMPTY \
+    EMPTY \
+    \
+    start_split \
+    stop_reset \
+    cancel \
+    unsplit \
+    skip_split \
+    toggle_always_on_top \
+    toggle_decor \
+    \
+    EMPTY \
+    EMPTY \
+    \
+    theme_select \
+    \
+    EMPTY \
+    <<< "$output"
+
+echo "Global Hotkeys: $global_hotkey_status"
+echo "Hide Cursor: $hide_cursor_status"
+echo "Decoration on Start: $start_decor_status"
+echo "Force Always On Top at Start: $start_on_top_status"
+echo ""
+echo "Start/Split: $start_split"
+echo "Stop/Reset: $stop_reset"
+echo "Cancel: $cancel"
+echo "Unsplit: $unsplit"
+echo "Skip Split: $skip_split"
+echo "Toggle always on-top: $toggle_always_on_top"
+echo "Toggle window decoration: $toggle_decor"
+echo ""
+echo "Theme: $theme_select"
+
+global_hotkey_status="${global_hotkey_status,,}"
+hide_cursor_status="${hide_cursor_status,,}"
+start_decor_status="${start_decor_status,,}"
+start_on_top_status="${start_on_top_status,,}"
+
+if [[ -z "$global_hotkey_status" || -z "$hide_cursor_status" || -z "$start_decor_status" || -z "$start_on_top_status" || -z "$start_split" || -z "$stop_reset" || -z "$cancel" || -z "$unsplit" || -z "$skip_split" || -z "$toggle_always_on_top" || -z "$toggle_decor" || -z "$theme_select" ]]; then
+    yad --title="Error" --text='<span size="x-large" font_weight="bold">One or more fields are empty. No settings were applied.</span>' --button="OK:0" --width=300 --height=100 --warning
+    exit 1
+else
+    $set global-hotkeys $global_hotkey_status
+    $set hide-cursor $hide_cursor_status
+    $set start-decorated $start_decor_status
+    $set start-on-top $start_on_top_status
+
+    $set keybind-start-split $start_split
+    $set keybind-stop-reset $stop_reset
+    $set keybind-cancel $cancel
+    $set keybind-unsplit $unsplit
+    $set keybind-skip-split $skip_split
+    $set keybind-toggle-win-on-top $toggle_always_on_top
+    $set keybind-toggle-decorations $toggle_decor
+
+    $set theme $theme_select
+fi
