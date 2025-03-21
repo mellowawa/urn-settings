@@ -1,7 +1,9 @@
+#!/usr/bin/bash
+
 echo "WARNING!!!"
 echo "This WILL require sudo access!"
 
-if [ "$1" == "--uninstall" ]; then
+if [[ "$1" == "--uninstall" ]]; then
   sudo rm /usr/bin/urn-settings
   sudo rm /usr/share/applications/urn.desktop
   exit 0
