@@ -2,6 +2,7 @@
 
 get="gsettings get wildmouse.urn"
 set="gsettings set wildmouse.urn"
+theme_dir="/usr/local/share/urn/themes/"
 
 global_hotkey_status=$($get global-hotkeys)
 hide_cursor_status=$($get hide-cursor)
@@ -43,9 +44,11 @@ output=$( \
     --field=" ":LBL "" \
     --field='<span size="x-large" font_weight="bold">Theming</span>':LBL "" \
     --field="Theme:":CB "$set_theme!$theme_select" \
+    --field='<span>Install New theme:</span>\n<span size="small">Requires <b>Sudo</b> access</span>':DIR "" \
     \
     --field=" ":LBL \
     --button="Save:0" \
+    --button="Cancel:1"
 )
 
 echo "Output from yad: $output"
@@ -74,10 +77,12 @@ IFS='|' read -r \
     EMPTY \
     \
     theme_select \
+    install_theme \
     \
     EMPTY \
     <<< "$output"
 
+echo ""
 echo "Global Hotkeys: $global_hotkey_status"
 echo "Hide Cursor: $hide_cursor_status"
 echo "Decoration on Start: $start_decor_status"
@@ -92,6 +97,7 @@ echo "Toggle always on-top: $toggle_always_on_top"
 echo "Toggle window decoration: $toggle_decor"
 echo ""
 echo "Theme: $theme_select"
+echo "Install Theme: $install_theme"
 
 global_hotkey_status="${global_hotkey_status,,}"
 hide_cursor_status="${hide_cursor_status,,}"
@@ -99,7 +105,12 @@ start_decor_status="${start_decor_status,,}"
 start_on_top_status="${start_on_top_status,,}"
 
 if [[ -z "$global_hotkey_status" || -z "$hide_cursor_status" || -z "$start_decor_status" || -z "$start_on_top_status" || -z "$start_split" || -z "$stop_reset" || -z "$cancel" || -z "$unsplit" || -z "$skip_split" || -z "$toggle_always_on_top" || -z "$toggle_decor" || -z "$theme_select" ]]; then
-    yad --title="Error" --text='<span size="x-large" font_weight="bold">One or more fields are empty. No settings were applied.</span>' --button="OK:0" --width=300 --height=100 --warning
+    yad --title="Error" \
+    --text='<span size="x-large" font_weight="bold">One or more fields are empty. No settings were applied.</span>' \
+    --button="OK:0" \
+    --width=300 \
+    --height=100 \
+    --warning
     exit 1
 else
     $set global-hotkeys $global_hotkey_status
@@ -117,3 +128,30 @@ else
 
     $set theme $theme_select
 fi
+
+if [[ -z "$install_theme" ]]; then
+    exit 0
+else
+    pkexec cp -r "$install_theme" "$theme_dir"
+    yad --title="Select theme" \
+        --text="Would you like to apply the just installed theme?" \
+        --button="Yes:0" \
+        --button="No:1"
+    new_theme_select=$?
+
+    echo ""
+    echo "Selection: $new_theme_select"
+
+    new_theme="${install_theme##*/}"
+
+    if [[ "$new_theme_select" == "0" ]]; then
+        $set theme $new_theme
+        echo "Theme: $($get theme)"
+    else
+        echo "Didnt select new theme"
+    fi
+
+    exit 0
+fi
+
+ext 1
